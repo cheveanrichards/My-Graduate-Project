@@ -1,0 +1,820 @@
+#include<iostream>
+#include<fstream>
+#include<iomanip>
+
+using namespace std;
+ifstream infile;
+ofstream outfile;
+// student structure
+struct student {
+	string firstname;
+	string lastname;
+	string subject[10] ;
+	int credit[10] ;
+	int ID ;
+	char grades[10];
+	float gpa ;
+	int subjamt ;
+	student* link ;
+};
+
+//function to create the class list from input file
+void createclasslist(student*& head) {
+	student* newnode, * last;
+	int creditgiven;
+	char lettergrade;
+	float sum = 1; float mult; float sum2 = 1;
+	last = head;
+	int subjectamt;
+
+	while (!infile.eof()) {
+		newnode = new student;
+		infile >> subjectamt;
+		newnode->subjamt = subjectamt;
+		infile >> newnode->firstname;
+		infile >> newnode->lastname;
+		infile >> newnode->ID;
+		for (int i = 0; i < subjectamt; i++) {
+			infile >> newnode->subject[i];
+			infile >> creditgiven;
+			newnode->credit[i] = creditgiven;
+			infile >> lettergrade;
+			newnode->grades[i] = lettergrade;
+		}
+
+		if (head == NULL) {
+			head = newnode;
+			last = newnode;
+		}
+
+		else {
+			last->link = newnode;
+			last = newnode;
+			newnode->link = NULL;
+		}
+
+	}
+
+}
+
+//function used to modify grade of a student given the student ID number
+void modifygrade(student **head,int idnumber) {
+	student* temp;
+	temp = *head;
+	int x; string subject; char grade; int credit;
+	cout << " Enter the course number to modify grade " << endl;
+		cin >> x;
+	while (temp != NULL) {
+		if (temp->ID == idnumber) {
+			cout << " Enter the new grade for the course " << endl;
+			cin >> grade;
+			temp->grades[x-1] = grade;
+		}
+		temp = temp->link;
+	}
+
+}
+
+
+//function used to delete student from the class list given the ID number of the student
+void deletestudent(struct student** head_ref, int key)
+{
+	// Store head node 
+	student* temp = *head_ref;
+	student*prev=temp;
+
+	
+	if (temp != NULL && temp->ID == key)
+	{
+		*head_ref = temp->link;   
+		delete temp;               
+		return;
+	}
+
+	while (temp != NULL && temp->ID != key)
+	{
+		prev = temp;
+		temp = temp->link;
+	}
+
+	if (temp == NULL) return;
+
+	// Unlink the node from linked list 
+	prev->link = temp->link;
+
+	delete temp;  // Free memory 
+}
+
+// function used to add a course to a student node given the student id
+void Addcourse(student** head, int idnum) {
+	student* temp;
+	temp = *head;
+	int x; string subject; char grade; int credit;
+
+	while (temp != NULL) {
+		if (temp->ID == idnum) {
+			x = temp->subjamt;
+			temp->subjamt = x+1;
+			cout << " Enter the name of the subject " << endl;
+			cin >> subject;
+			temp->subject[x]=subject;
+			cout << " Enter the credit hours of the subject " << endl;
+			cin >> credit;
+			temp->credit[x]=credit;
+			cout << " Enter the subject grade " << endl;
+			cin >> grade;
+			temp->grades[x]=grade;
+		}
+
+
+		temp = temp->link;
+	}
+}
+
+// function used to delete a course from a studen given the student id 
+void deletecourse(student** head, int idnum) {
+	student* temp;
+	temp = *head;
+	int x; int deletenum;
+	cout << " Enter the number of the course you want to be deleted " << endl;
+	cin >> deletenum;
+	while (temp != NULL) {
+		if (temp->ID == idnum) {
+			x = temp->subjamt;
+			temp->subjamt = x - 1;
+			temp->subject[deletenum - 1] = temp->subject[x-1];
+			temp->credit[deletenum - 1] = temp->credit[x-1];
+			temp->grades[deletenum - 1] = temp->grades[x - 1];
+			temp->subject[x - 1] = {};
+			temp->credit[x - 1] = {};
+			temp->credit[x - 1] = {};
+
+		}
+
+
+		temp = temp->link;
+	}
+}
+
+// function used to find gpa of the class list
+void find_gpa(student** head) {
+	student* p;
+	p = *head;
+	int mult; float sum = 0, sum2 = 0;
+	while (p->link!= NULL) {
+		for (int i = 0; i < p->subjamt; i++) {
+			if (p->grades[i] == 'A'){
+				mult = 4;
+			sum = sum + (p->credit[i] * mult);
+		}
+			else if (p->grades[i] == 'B'){
+				mult = 3;
+			sum = sum + (p->credit[i] * mult);
+		}
+			else if (p->grades[i] == 'C'){
+				mult = 2;
+			sum = sum + (p->credit[i] * mult);
+		}
+			else if (p->grades[i] == 'D'){
+				mult = 1;
+			sum = sum + (p->credit[i] * mult);
+		}
+			else if (p->grades[i] == 'F'){
+				mult = 0;
+			sum = sum + (p->credit[i] * mult);
+		}
+			sum2 = sum2 + p->credit[i];
+			
+		}
+		p->gpa = sum / sum2;
+		
+
+		p = p->link;
+		sum = 0;
+		sum2 = 0;
+	}
+}
+
+//utility fucntion used to recussively sort by the first character of a student firstname
+student* SortedMergefname(student* a, student* b)
+{
+	student* result = NULL;
+
+	/* Base cases */
+	if (a == NULL)
+		return (b);
+	else if (b == NULL)
+		return (a);
+
+	/* Pick either a or b, and recur */
+	if (static_cast<int>(a->firstname[0]) - 1 <= static_cast<int>(b->firstname[0]) - 1) {
+		result = a;
+		result->link = SortedMergefname(a->link, b);
+	}
+	else {
+		result = b;
+		result->link = SortedMergefname(a, b->link);
+	}
+	return (result);
+}
+
+//utility fucntion used to recussively sort by the first character of a student lastname
+student* SortedMergelname(student* a, student* b)
+{
+	student* result = NULL;
+
+	/* Base cases */
+	if (a == NULL)
+		return (b);
+	else if (b == NULL)
+		return (a);
+
+	/* Pick either a or b, and recur */
+	if (static_cast<int>(a->lastname[0]) - 1 <= static_cast<int>(b->lastname[0]) - 1) {
+		result = a;
+		result->link = SortedMergelname(a->link, b);
+	}
+	else {
+		result = b;
+		result->link = SortedMergelname(a, b->link);
+	}
+	return (result);
+}
+
+//utility fucntion used to recussively sort by a student ID
+student* SortedMergeID(student* a, student* b)
+{
+	student* result = NULL;
+
+	/* Base cases */
+	if (a == NULL)
+		return (b);
+	else if (b == NULL)
+		return (a);
+
+	/* Pick either a or b, and recur */
+	if (a->ID <= b->ID) {
+		result = a;
+		result->link = SortedMergeID(a->link, b);
+	}
+	else {
+		result = b;
+		result->link = SortedMergeID(a, b->link);
+	}
+	return (result);
+}
+
+//utility fucntion used to recussively sort by a student gpa
+student* SortedMergegpa(student* a, student* b)
+{
+	student* result = NULL;
+
+	/* Base cases */
+	if (a == NULL)
+		return (b);
+	else if (b == NULL)
+		return (a);
+
+	/* Pick either a or b, and recur */
+	if (a->gpa <= b->gpa) {
+		result = a;
+		result->link = SortedMergegpa(a->link, b);
+	}
+	else {
+		result = b;
+		result->link = SortedMergegpa(a, b->link);
+	}
+	return (result);
+}
+
+/* UTILITY FUNCTIONS */
+/* Split the nodes of the given list into front and back halves,
+	and return the two lists using the reference parameters.
+	If the length is odd, the extra node should go in the front list.
+	Uses the fast/slow pointer strategy. */
+void FrontBackSplit(student* source,student** frontRef, student** backRef)
+{
+	student* fast;
+	student* slow;
+	slow = source;
+	fast = source->link;
+
+	/* Advance 'fast' two nodes, and advance 'slow' one node */
+	while (fast != NULL) {
+		fast = fast->link;
+		if (fast != NULL) {
+			slow = slow->link;
+			fast = fast->link;
+		}
+	}
+
+	/* 'slow' is before the midpoint in the list, so split it in two
+	at that point. */
+	*frontRef = source;
+	*backRef = slow->link;
+	slow->link = NULL;
+}
+
+// Function used to sort class list using ID
+void MergeSortID(student** headRef)
+{
+	student* head = *headRef;
+	student* a;
+	student* b;
+
+	/* Base case -- length 0 or 1 */
+	if ((head == NULL) || (head->link == NULL)) {
+		return;
+	}
+
+	/* Split head into 'a' and 'b' sublists */
+	FrontBackSplit(head, &a, &b);
+
+	/* Recursively sort the sublists */
+	MergeSortID(&a);
+	MergeSortID(&b);
+
+	/* answer = merge the two sorted lists together */
+	*headRef = SortedMergeID(a, b);
+}
+
+// Function used to sort class list using gpa
+void MergeSortgpa(student** headRef)
+{
+	student* head = *headRef;
+	student* a;
+	student* b;
+
+	/* Base case -- length 0 or 1 */
+	if ((head == NULL) || (head->link == NULL)) {
+		return;
+	}
+
+	/* Split head into 'a' and 'b' sublists */
+	FrontBackSplit(head, &a, &b);
+
+	/* Recursively sort the sublists */
+	MergeSortgpa(&a);
+	MergeSortgpa(&b);
+
+	/* answer = merge the two sorted lists together */
+	*headRef = SortedMergegpa(a, b);
+}
+
+// Function used to sort class list using firstname
+void MergeSortfname(student** headRef)
+{
+	student* head = *headRef;
+	student* a;
+	student* b;
+
+	/* Base case -- length 0 or 1 */
+	if ((head == NULL) || (head->link == NULL)) {
+		return;
+	}
+
+	/* Split head into 'a' and 'b' sublists */
+	FrontBackSplit(head, &a, &b);
+
+	/* Recursively sort the sublists */
+	MergeSortfname(&a);
+	MergeSortfname(&b);
+
+	/* answer = merge the two sorted lists together */
+	*headRef = SortedMergefname(a, b);
+}
+
+// Function used to sort class list using lastname
+void MergeSortlname(student** headRef)
+{
+	student* head = *headRef;
+	student* a;
+	student* b;
+
+	/* Base case -- length 0 or 1 */
+	if ((head == NULL) || (head->link == NULL)) {
+		return;
+	}
+
+	/* Split head into 'a' and 'b' sublists */
+	FrontBackSplit(head, &a, &b);
+
+	/* Recursively sort the sublists */
+	MergeSortlname(&a);
+	MergeSortlname(&b);
+
+	/* answer = merge the two sorted lists together */
+	*headRef = SortedMergelname(a, b);
+}
+
+// function used to search for student using ID number
+void search(student*head, int idnum) {
+	student* first1;
+	first1 = head;
+	int count = 0;
+
+		while (first1 != NULL) {
+			if (first1->ID == idnum) {
+				count = count++;
+				cout << " Student Firstname: " << first1->firstname << endl;;
+				cout << " Student  Lastname: " << first1->lastname << endl;;
+				cout << "        Student ID: " << first1->ID << endl;
+				cout << "Current Enrollment: " << first1->subjamt << " courses " << endl;
+				for (int i = 0; i < first1->subjamt; i++) {
+					cout << " Course [" << i + 1 << "] " << first1->subject[i] << setw(3);
+					cout << first1->credit[i] << setw(3);
+					cout << first1->grades[i] << setw(3);
+					cout << endl;
+				}
+
+				cout << " Student GPA: " << first1->gpa << endl;
+				cout << endl;
+
+			}
+
+			first1 = first1->link;
+		}
+	
+}
+
+
+// function used to search for Honor student using gpa
+void Honorstudent(student* head) {
+	student* first1;
+	first1 = head;
+	int count = 0;
+
+	while (first1 != NULL) {
+		if ( first1->gpa > 3.6) {
+			count = count++;
+			cout << " Student Firstname: " << first1->firstname << endl;;
+			cout << " Student  Lastname: " << first1->lastname << endl;;
+			cout << "        Student ID: " << first1->ID << endl;
+			cout << "Current Enrollment: " << first1->subjamt << " courses " << endl;
+			for (int i = 0; i < first1->subjamt; i++) {
+				cout << " Course [" << i + 1 << "] " << first1->subject[i] << setw(3);
+				cout << first1->credit[i] << setw(3);
+				cout << first1->grades[i] << setw(3);
+				cout << endl;
+			}
+
+			cout << " Student GPA: " << first1->gpa << endl;
+			cout << endl;
+
+		}
+
+		first1 = first1->link;
+	}
+	cout << " Total Number of Honor student = " << count<<endl;
+}
+
+// function used to search for Warned student using gpa
+void Warnstudent(student* head) {
+	student* first1;
+	first1 = head;
+	int count = 0;
+
+	while (first1 != NULL) {
+		if ( first1->gpa < 2.5) {
+			count = count++;
+			cout << " Student Firstname: " << first1->firstname << endl;;
+			cout << " Student  Lastname: " << first1->lastname << endl;;
+			cout << "        Student ID: " << first1->ID << endl;
+			cout << "Current Enrollment: " << first1->subjamt << " courses " << endl;
+			for (int i = 0; i < first1->subjamt; i++) {
+				cout << " Course [" << i + 1 << "] " << first1->subject[i] << setw(3);
+				cout << first1->credit[i] << setw(3);
+				cout << first1->grades[i] << setw(3);
+				cout << endl;
+			}
+
+			cout << " Student GPA: " << first1->gpa << endl;
+			cout << endl;
+
+		}
+
+		first1 = first1->link;
+	}
+	cout << " Total Number of Warned student = " << count<<endl;
+}
+
+// function used to search for Failed student using gpa
+void Failstudent(student* head) {
+	student* first1;
+	first1 = head;
+	int count = 0;
+
+	while (first1 != NULL) {
+		if ( first1->gpa < 2.0) {
+			count = count++;
+			cout << " Student Firstname: " << first1->firstname << endl;;
+			cout << " Student  Lastname: " << first1->lastname << endl;;
+			cout << "        Student ID: " << first1->ID << endl;
+			cout << "Current Enrollment: " << first1->subjamt << " courses " << endl;
+			for (int i = 0; i < first1->subjamt; i++) {
+				cout << " Course [" << i + 1 << "] " << first1->subject[i] << setw(3);
+				cout << first1->credit[i] << setw(3);
+				cout << first1->grades[i] << setw(3);
+				cout << endl;
+			}
+
+			cout << " Student GPA: " << first1->gpa << endl;
+			cout << endl;
+
+		}
+
+		first1 = first1->link;
+	}
+	cout << " Total Number of Failed student = " << count<<endl;
+}
+
+// utility function used to search for student using ID number
+void search2(student* head, int idnum) {
+	student* first1;
+	first1 = head;
+	int count = 0;
+
+	while (first1 != NULL) {
+		if (first1->ID == idnum) {
+			count = count++;
+			cout << " Student Firstname: " << first1->firstname << endl;;
+			cout << " Student  Lastname: " << first1->lastname << endl;;
+			cout << "        Student ID: " << first1->ID << endl;
+			cout << "Current Enrollment: " << first1->subjamt << " courses " << endl;
+			for (int i = 0; i < first1->subjamt; i++) {
+				cout << " Course [" << i + 1 << "] " << first1->subject[i] << setw(3);
+				cout << first1->credit[i] << setw(3);
+				cout << first1->grades[i] << setw(3);
+				cout << endl;
+			}
+
+			cout << endl;
+
+		}
+
+		first1 = first1->link;
+	}
+
+}
+
+// function used to add a new student to classlist
+void insertnewstudent(student ** head_ref)
+{
+	student* newnode = new student;
+	student* last = *head_ref; 
+	cout << " Enter the student first name " << endl;
+	cin >> newnode->firstname;
+	cout << " Enter the student last name " << endl;
+	cin >> newnode->lastname;
+	cout << " Enter the student ID number " << endl;
+	cin >> newnode->ID;
+	cout << " Enter the number of subjects student took this semester " << endl;
+	cin >> newnode->subjamt;
+	for (int i = 0; i < newnode->subjamt; i++) {
+		cout << " Enter the subject name " << endl;
+		cin >> newnode->subject[i];
+		cout << " Enter the credit hours for course " << endl;
+		cin >> newnode->credit[i];
+		cout << " Enter the grade the student receive for course " << endl;
+		cin >> newnode->grades[i];
+	}
+	
+	newnode->link = NULL;
+
+	if (*head_ref == NULL)
+	{
+		*head_ref = newnode;
+		return;
+	}
+
+	while (last->link != NULL)
+		last = last->link;
+
+	last->link = newnode;
+	return;
+}
+
+// function used to print class list 
+void printlist(student*& head) {
+	student* first1;
+	first1 = head;
+	int count = 0;
+	while (first1 != NULL) {
+		count = count++;
+		cout << " Student Firstname: " << first1->firstname << endl;;
+		cout << " Student  Lastname: " << first1->lastname << endl;;
+		cout << "        Student ID: " << first1->ID << endl;
+		cout << "Current Enrollment: " << first1->subjamt << " courses " << endl;
+		for (int i = 0; i < first1->subjamt; i++) {
+			cout << " Course [" << i + 1 << "] " << first1->subject[i] << setw(3);
+			cout << first1->credit[i] << setw(3);
+			cout << first1->grades[i] << setw(3);
+			cout << endl;
+		}
+		cout << endl;
+		first1 = first1->link;
+
+
+	}
+
+	cout << " Total Students : " << count << endl;
+}
+
+// function used to print class list 
+void printlistgpa(student*& head) {
+	student* first1;
+	first1 = head;
+	int count = 0;
+	while (first1 != NULL) {
+		count = count++;
+		cout << " Student Firstname: " << first1->firstname << endl;;
+		cout << " Student  Lastname: " << first1->lastname << endl;;
+		cout << "        Student ID: " << first1->ID << endl;
+		cout << "Current Enrollment: " << first1->subjamt << " courses " << endl;
+		for (int i = 0; i < first1->subjamt; i++) {
+			cout << " Course [" << i + 1 << "] " << first1->subject[i] << setw(3);
+			cout << first1->credit[i] << setw(3);
+			cout << first1->grades[i] << setw(3);
+			cout << endl;
+		}
+		cout << " Student GPA: " << first1->gpa << endl;
+		cout << endl;
+		first1 = first1->link;
+
+
+	}
+
+	cout << " Total Students : " << count << endl;
+}
+
+// Beginning of Driver code
+int main() {
+	int options;
+	student* first = NULL; int idnumber;
+	infile.open("SeniorClass.txt");
+	do {
+		cout << "----------STUDENT CLASS MENU----------" << endl;
+		cout << "*         Please select an option    *" << endl;
+		cout << "--[1]------------------CREATECLASSLIST & SORT by LAST NAME " << endl;
+		cout << "--[2]------------------INSERT NEW STUDENT " << endl;
+		cout << "--[3]------------------ADD COURSE " << endl;
+		cout << "--[4]------------------DELETE STUDENT " << endl;
+		cout << "--[5]------------------DELETE COURSE " << endl;
+		cout << "--[6]------------------FIND GPA " << endl;
+		cout << "--[7]------------------SORT(lastname,GPA,ID) " << endl;                       //menu options for user friendliness
+		cout << "--[8]------------------SEARCH " << endl;
+		cout << "--[9]------------------Modify Grade " << endl;
+		cout << "-[10]------------------HonorStudent " << endl;
+		cout << "-[11]------------------WarnStudent  " << endl;
+		cout << "-[12]------------------FailStudent  " << endl;
+		cout << "-[13]------------------Print(sorted by lastname) " << endl;
+		cout << "-[99]------------------Quit/END PROGRAM " << endl;
+		cin >> options;
+		switch (options) {
+
+		case 1:
+			cout << endl;
+			createclasslist(first);
+			find_gpa(&first);
+			MergeSortlname(&first);
+			printlist(first);
+			cout << endl << " You have just created your class list sorted by last name  " << endl << endl;
+			break;
+		case 2:
+			cout << endl;
+			insertnewstudent(&first);
+			find_gpa(&first);
+			MergeSortlname(&first);
+			printlist(first);
+			break;
+
+		case 3:
+
+			cout << endl;
+			cout << " Please enter the student ID number " << endl;
+			cin >> idnumber;
+			Addcourse(&first, idnumber);
+			find_gpa(&first);
+			search2(first, idnumber);
+			break;
+		case 4:
+			cout << endl;
+			cout << " Please enter the student ID number " << endl;
+			cin >> idnumber;
+			search(first, idnumber);
+			deletestudent(&first, idnumber);
+			MergeSortlname(&first);
+			printlist(first);
+			cout << endl;
+			break;
+		case 5:
+			cout << endl;
+			cout << " Please enter the student ID number " << endl;
+			cin >> idnumber;
+			search(first, idnumber);
+			deletecourse(&first, idnumber);
+			find_gpa(&first);
+			search2(first, idnumber);
+			break;
+		case 6:
+
+			cout << endl;
+			cout << " Please enter the student ID number " << endl;
+			cin >> idnumber;
+			find_gpa(&first);
+			search(first, idnumber);
+			break;
+		case 7:
+			cout << endl;
+			int sortoption;
+			cout << "How would you like to sort " << endl;
+			cout << " [1] BY GPA " << endl;
+			cout << " [2] BY Firstname " << endl;
+			cout << " [3] By ID " << endl;
+			cout << " [4] QuitSort menu " << endl;
+			cin >> sortoption;
+			switch (sortoption) {
+			case 1:
+				MergeSortgpa(&first);
+				find_gpa(&first);
+				printlistgpa(first);
+				break;
+			case 2:
+				MergeSortfname(&first);
+				find_gpa(&first);
+				printlistgpa(first);
+				break;
+			case 3:
+				MergeSortID(&first);
+				find_gpa(&first);
+				printlist(first);
+				break;
+
+			case 4:
+				break;
+			}
+			break;
+		case 8:
+			cout << endl;
+			cout << " Please enter the student ID number " << endl;
+			cin >> idnumber;
+			cout << endl;
+			search(first, idnumber);
+			break;
+
+		case 9:
+			cout << endl;
+			cout << " Please enter the student ID number " << endl;
+			cin >> idnumber;
+			cout << endl;
+			search2(first, idnumber);
+			modifygrade(&first, idnumber);
+			cout << endl;
+			search2(first, idnumber);
+			break;
+
+		case 10:
+			cout << endl;
+			cout << " The Honor Students are as Follows: " << endl;
+			Honorstudent(first);
+			cout << endl;
+			break;
+
+		case 11:
+			cout << endl;
+			cout << " The Warned Students are as Follows: " << endl;
+			Warnstudent(first);
+			cout << endl;
+			break;
+
+		case 12:
+			cout << endl;
+			cout << " The Failed Students are as Follows: " << endl;
+			Failstudent(first);
+			cout << endl;
+			break;
+
+		case 13:
+			cout << endl;
+			MergeSortlname(&first);
+			printlist(first);
+		}
+
+	} while (options != 99);
+	
+
+	
+	system("pause");
+	infile.close();
+	return 0;
+
+}
+
+
+
+
+
+
+
+
+
